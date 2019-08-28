@@ -5,7 +5,7 @@
     "icon": "_360Mode.Assets.360ModeIcon.png",
     "id": "360Mode",
     "name": "360 Mode",
-    "description": "",
+    "description": "Unofficial 360° mode for Beat Saber",
     "version": "0.2.0",
     "dependsOn": {
         "SongCore": "^2.0.11",
