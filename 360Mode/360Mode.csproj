@@ -77,6 +77,12 @@
   <ItemGroup>
     <EmbeddedResource Include="manifest.json" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\360ModeIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\360ModeIconGithub.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetDir)$(TargetFileName)" "C:\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins"</PostBuildEvent>
