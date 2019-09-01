@@ -17,7 +17,8 @@ namespace _360Mode
     {
         private static int lastSpawnedObjectId;
 
-        private static bool Prefix(BeatmapObjectSpawnController __instance, BeatmapObjectData beatmapObjectData, ref bool ____disableSpawning, ref float ____moveDistance, ref float ____moveSpeed, ref float ____jumpDistance, ref float ____noteJumpMovementSpeed, ref float ____topObstaclePosY, ref float ____globalYJumpOffset, ref float ____verticalObstaclePosY, ref ObstacleController.Pool ____topObstaclePool, ref ObstacleController.Pool ____fullHeightObstaclePool, ref float ____spawnAheadTime, ref float ____noteLinesDistance, ref Action<BeatmapObjectSpawnController, ObstacleController> ___obstacleDiStartMovementEvent, ref float ____topLinesZPosOffset, ref NoteController.Pool ____bombNotePool, ref NoteController.Pool ____noteAPool, ref NoteController.Pool ____noteBPool, ref int ____numberOfSpawnedBasicNotes, ref float ____firstBasicNoteTime, ref NoteController ____prevSpawnedNormalNoteController, ref bool ____disappearingArrows, ref bool ____ghostNotes, ref Action<BeatmapObjectSpawnController, BeatmapObjectData, float, float> ___beatmapObjectWasSpawnedEvent)
+        private static bool Prefix(BeatmapObjectSpawnController __instance, BeatmapObjectData beatmapObjectData, ref bool ____disableSpawning, ref float ____moveDistance, ref float ____moveSpeed, ref float ____jumpDistance, ref float ____noteJumpMovementSpeed, ref float ____topObstaclePosY, ref float ____globalYJumpOffset, ref float ____verticalObstaclePosY, ref ObstacleController.Pool ____obstaclePool, ref float ____spawnAheadTime, ref float ____noteLinesDistance, ref Action<BeatmapObjectSpawnController, ObstacleController> ___obstacleDiStartMovementEvent, ref float ____topLinesZPosOffset, ref NoteController.Pool ____bombNotePool, ref NoteController.Pool ____noteAPool, ref NoteController.Pool ____noteBPool, ref int ____numberOfSpawnedBasicNotes, ref float ____firstBasicNoteTime, ref NoteController ____prevSpawnedNormalNoteController, ref bool ____disappearingArrows, ref bool ____ghostNotes, ref Action<BeatmapObjectSpawnController, BeatmapObjectData, float, float> ___beatmapObjectWasSpawnedEvent,
+            ref float ____topObstacleHeight, ref float ____verticalObstacleHeight)
         {
             if (!Plugin.active)
             {
@@ -45,11 +46,13 @@ namespace _360Mode
                 Vector3 vector3 = vector - forward * (____moveDistance + ____jumpDistance);
                 Vector3 noteOffset = __instance.GetNoteOffset(beatmapObjectData.lineIndex, NoteLineLayer.Base);
                 noteOffset.y = ((obstacleData.obstacleType == ObstacleType.Top) ? (____topObstaclePosY + ____globalYJumpOffset) : ____verticalObstaclePosY);
-                ObstacleController obstacleController = ((obstacleData.obstacleType == ObstacleType.Top) ? ____topObstaclePool : ____fullHeightObstaclePool).Spawn();
+
+                float height = (obstacleData.obstacleType == ObstacleType.Top) ? ____topObstacleHeight : ____verticalObstacleHeight;
+                ObstacleController obstacleController = ____obstaclePool.Spawn();
                 __instance.SetObstacleEventCallbacks(obstacleController);
                 obstacleController.transform.SetPositionAndRotation(angle * (vector + noteOffset), angle);
-                lastSpawnedObjectId = beatmapObjectData.id;
-                obstacleController.Init(obstacleData, angle * (vector + noteOffset), angle * (vector2 + noteOffset), angle * (vector3 + noteOffset), num2, num3, beatmapObjectData.time - ____spawnAheadTime, ____noteLinesDistance);
+                obstacleController.Init(obstacleData, angle * (vector + noteOffset), angle * (vector2 + noteOffset), angle * (vector3 + noteOffset), num2, num3, beatmapObjectData.time - ____spawnAheadTime, ____noteLinesDistance, height);
+
                 ___obstacleDiStartMovementEvent?.Invoke(__instance, obstacleController);
             }
             else
@@ -239,8 +242,7 @@ namespace _360Mode
         typeof(int),
         typeof(int),
         typeof(Vector3),
-        typeof(Color),
-        typeof(SaberAfterCutSwingRatingCounter)
+        typeof(Color)
     })]
     [HarmonyPatch("SpawnFlyingScore")]
     internal class FlyingScoreSpawnerPatch
@@ -248,7 +250,7 @@ namespace _360Mode
         public static Quaternion lastNoteRotation;
         public static bool lastNoteRotationSet;
 
-        public static bool Prefix(FlyingScoreSpawner __instance, NoteCutInfo noteCutInfo, int noteLineIndex, int multiplier, Vector3 pos, Color color, SaberAfterCutSwingRatingCounter saberAfterCutSwingRatingCounter, ref float[,] ___lineSlotSpawnTimes, ref FlyingScoreEffect.Pool ____flyingScoreEffectPool)
+        public static bool Prefix(FlyingScoreSpawner __instance, NoteCutInfo noteCutInfo, int noteLineIndex, int multiplier, Vector3 pos, Color color, ref float[,] ___lineSlotSpawnTimes, ref FlyingScoreEffect.Pool ____flyingScoreEffectPool)
         {
             if (!Plugin.active)
             {
@@ -295,7 +297,7 @@ namespace _360Mode
                 targetPos = pos + new Vector3(0f, -0.23f * num, 7.55f);
             }
 
-            flyingScoreEffect.InitAndPresent(noteCutInfo, multiplier, 0.7f, targetPos, color, saberAfterCutSwingRatingCounter);
+            flyingScoreEffect.InitAndPresent(noteCutInfo, multiplier, 0.7f, targetPos, color);
 
             return false;
         }
@@ -366,7 +368,7 @@ namespace _360Mode
                 pos.z = ____spawnPosZ;
                 ____missedNoteFlyingSpriteSpawner.SpawnFlyingSprite(pos);
             }
-            return true;
+            return false;
         }
     }
 
@@ -398,7 +400,7 @@ namespace _360Mode
                     FlyingScoreSpawnerPatch.lastNoteRotation = noteController.transform.rotation;
                     FlyingScoreSpawnerPatch.lastNoteRotationSet = true;
                     Vector3 pos2 = Quaternion.Inverse(FlyingSpriteSpawnerPatch.lastNoteRotation) * pos;
-                    ____flyingScoreSpawner.SpawnFlyingScore(noteCutInfo, noteData.lineIndex, multiplierWithFever, pos2, new Color(0f, 0.75f, 1f), noteCutInfo.afterCutSwingRatingCounter);
+                    ____flyingScoreSpawner.SpawnFlyingScore(noteCutInfo, noteData.lineIndex, multiplierWithFever, pos2, new Color(0.8f, 0.8f, 0.8f));
                 }
                 Vector3 pos3 = pos;
                 pos3.y = 0.01f;
@@ -487,6 +489,7 @@ namespace _360Mode
             float songTime = ____audioTimeSyncController.songTime;
             float num = songTime - ____startTime;
             float num2 = num / ____jumpDuration;
+
             ____localPosition = Vector3.LerpUnclamped(____startPos + __instance.transform.rotation * ____playerController.headPos * Mathf.Min(1f, num2 * 2f), ____endPos + __instance.transform.rotation * ____playerController.headPos, num2);
             ____localPosition.y = ____startPos.y + ____startVerticalVelocity * num - ____gravity * num * num * 0.5f;
 
@@ -549,7 +552,7 @@ namespace _360Mode
             __instance.transform.position = ____localPosition;
             __result = vector;
 
-            return true;
+            return false;
         }
     }
 
@@ -578,6 +581,7 @@ namespace _360Mode
             moveStartPos += __instance.transform.forward * ____zOffset;
             moveEndPos += __instance.transform.forward * ____zOffset;
             jumpEndPos += __instance.transform.forward * ____zOffset;
+
             ____floorMovement.Init(moveStartPos, moveEndPos, moveDuration, startTime);
             ____position = ____floorMovement.SetToStart();
             ____prevPosition = ____position;
@@ -602,12 +606,13 @@ namespace _360Mode
         typeof(float),
         typeof(float),
         typeof(float),
+        typeof(float),
         typeof(float)
     })]
     [HarmonyPatch("Init")]
     internal class ObstacleInitPatch
     {
-        public static bool Prefix(ObstacleController __instance, ObstacleData obstacleData, Vector3 startPos, Vector3 midPos, Vector3 endPos, float move1Duration, float move2Duration, float startTimeOffset, float singleLineWidth, ref bool ____initialized, ref ObstacleData ____obstacleData, ref float ____obstacleDuration, ref Vector3 ____startPos, ref Vector3 ____midPos, ref Vector3 ____endPos, ref float ____move1Duration, ref float ____move2Duration, ref float ____startTimeOffset, ref StretchableObstacle ____stretchableObstacle, ref Bounds ____bounds, ref float ____height, ref bool ____passedThreeQuartersOfMove2Reported, ref bool ____passedAvoidedMarkReported, ref float ____passedAvoidedMarkTime, ref float ____finishMovementTime, ref Action<ObstacleController> ___didInitEvent)
+        public static bool Prefix(ObstacleController __instance, ObstacleData obstacleData, Vector3 startPos, Vector3 midPos, Vector3 endPos, float move1Duration, float move2Duration, float startTimeOffset, float singleLineWidth, float height, ref bool ____initialized, ref ObstacleData ____obstacleData, ref float ____obstacleDuration, ref Vector3 ____startPos, ref Vector3 ____midPos, ref Vector3 ____endPos, ref float ____move1Duration, ref float ____move2Duration, ref float ____startTimeOffset, ref StretchableObstacle ____stretchableObstacle, ref Bounds ____bounds, ref bool ____passedThreeQuartersOfMove2Reported, ref bool ____passedAvoidedMarkReported, ref float ____passedAvoidedMarkTime, ref float ____finishMovementTime, ref Action<ObstacleController> ___didInitEvent, ref SimpleColorSO ____color)
         {
             if (!Plugin.active)
             {
@@ -628,7 +633,7 @@ namespace _360Mode
             ____move2Duration = move2Duration;
             ____startTimeOffset = startTimeOffset;
             float length = (____endPos - ____midPos).magnitude / move2Duration * obstacleData.duration;
-            ____stretchableObstacle.SetSize(num * 0.98f, ____height, length);
+            ____stretchableObstacle.SetSizeAndColor(num * 0.98f, height, length, ____color);
             ____bounds = ____stretchableObstacle.bounds;
             ____passedThreeQuartersOfMove2Reported = false;
             ____passedAvoidedMarkReported = false;

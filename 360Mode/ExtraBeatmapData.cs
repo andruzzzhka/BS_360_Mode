@@ -29,6 +29,8 @@ namespace _360Mode
 
                 int objId = 0;
 
+                beatmapObjectsAngles.Clear();
+
                 foreach (JToken note in notes)
                 {
                     JObject noteObject = (JObject)note;
@@ -45,6 +47,7 @@ namespace _360Mode
                                 else
                                 {
                                     beatmapObjectsAngles.Add(objId, Mathf.Abs(Config.swingMaxAngle - Extensions.Value<float>(noteObject["_time"]) * Config.swingAngleIncPerSecond % (Config.swingMaxAngle * 2f)) - Config.swingMaxAngle / 2f);
+
                                 }
                             }
                             else
